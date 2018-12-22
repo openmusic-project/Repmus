@@ -1,0 +1,22 @@
+;;;===========================================================================
+;;; repmus lib
+;;;===========================================================================
+
+(:om-lib
+ 
+ (:version 0.0)
+
+ (:doc "")
+
+ (:author "")
+
+ ;;; SOURCE FILES TO LOAD
+ (:source-files )
+
+ ;;; DECLARED SYMBOLS VISIBLE AND ACCESSIBLE THROUGH THE OM PACKAGE TREE
+ (:symbols
+  (:functions ) 
+  (:classes )
+ )
+)
+
