@@ -12,50 +12,30 @@
 (in-package :om)
 
 ;--------------------------------------------------
-;Variable definiton with files to load 
-;--------------------------------------------------
-
-(defvar *repmus-source-dir* nil)
-(setf *repmus-source-dir* (append (pathname-directory *load-pathname*) (list "sources")))
-
-
-(defvar *Repmus-lib-files* nil)
-(setf *Repmus-lib-files* '("as2om"
-                           "chords"
-                           "graph"
-                           "chordmap"
-                           "lc1"))
-
-;--------------------------------------------------
 ;Loading files 
 ;--------------------------------------------------
 
-(if (om-standalone-p)
-    (mapc #'(lambda (file) (load (make-pathname :directory *repmus-source-dir* :name file))) *Repmus-lib-files*)
-  (mapc #'(lambda (file) (compile&load (make-pathname :directory *repmus-source-dir* :name file))) *Repmus-lib-files*))
-
-#+sdif
-(if (om-standalone-p)
-    (load (make-pathname :directory *repmus-source-dir* :name "as2om-sdif"))
-  (compile&load (make-pathname :directory *repmus-source-dir* :name "as2om-sdif")))
+(mapc #'(lambda (file) 
+          (compile&load (om-make-pathname :directory (append (pathname-directory *load-pathname*) (list "sources")) :name file))) 
+      '("as2om"
+        "chords"
+        "graph"
+        "chordmap"
+        "lc1"
+        #+sdif "as2om-sdif"
+        ))
 
 ;--------------------------------------------------
 ; OM subpackages initialization
 ; ("sub-pack-name" subpacke-lists class-list function-list class-alias-list)
 ;--------------------------------------------------
-(defvar *subpackages-list* nil)
-(setf *subpackages-list*
-      '( ("Audiosculpt" nil nil (AS->OM) nil)
+(om::fill-library '( ("Audiosculpt" nil nil (AS->OM) nil)
          ("Chords" nil nil (Autotransp Mutation map-chords Chseq->poly tie-all) nil)
          ("Cribles" nil nil (lc crible-list crible-voice eval-crible pulsemaker ) nil)
          ("Graphs" nil nil (make-graph graph-tour) nil)
          ))
 
-
-;--------------------------------------------------
-;filling packages
-;--------------------------------------------------
-(om::fill-library *subpackages-list*)
+(set-lib-release 1.0)
 
 
 
