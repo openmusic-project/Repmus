@@ -17,25 +17,25 @@
 
 (mapc #'(lambda (file) 
           (compile&load (om-make-pathname :directory (append (pathname-directory *load-pathname*) (list "sources")) :name file))) 
-      '("as2om"
+      '(
         "chords"
         "graph"
         "chordmap"
         "lc1"
-        #+sdif "as2om-sdif"
+        "as2om"
         ))
 
 ;--------------------------------------------------
 ; OM subpackages initialization
 ; ("sub-pack-name" subpacke-lists class-list function-list class-alias-list)
 ;--------------------------------------------------
-(om::fill-library '( ("Audiosculpt" nil nil (AS->OM) nil)
-         ("Chords" nil nil (Autotransp Mutation map-chords Chseq->poly tie-all) nil)
-         ("Cribles" nil nil (lc crible-list crible-voice eval-crible pulsemaker ) nil)
+(om::fill-library '( ("Spectral analysis" nil nil (AS->OM) nil)
+         ("Chords" nil nil (autotransp mutation map-chords chseq->poly tie-all) nil)
+         ("Cribles" nil nil (lc crible-list crible-voice eval-crible) nil)
          ("Graphs" nil nil (make-graph graph-tour) nil)
          ))
 
-(set-lib-release 1.0)
+(set-lib-release 1.1)
 
 
 

@@ -1,3 +1,10 @@
+;;
+;;            Librairie RepMus
+;;
+;;            Gerard Assayag, Claudy Malherbe  © IRCAM 1996
+;;
+
+
 (in-package :om)
  
 
@@ -17,11 +24,12 @@
 
 (defun do-mutation (lfreq1 lfreq2  l-ord g-ord inout)
   (let ((source (copy-list lfreq1)) (transitions (do-pairing lfreq1 lfreq2 l-ord g-ord inout)) mutations)
-    (while transitions
-           (let ((transition (pop transitions)))
-             (cond
-              ((zerop (second transition)) 
-               (push (copy-list (setf lfreq1 (remove (first transition) lfreq1))) mutations))
+    (loop while transitions
+          do 
+          (let ((transition (pop transitions)))
+            (cond
+             ((zerop (second transition)) 
+              (push (copy-list (setf lfreq1 (remove (first transition) lfreq1))) mutations))
               ((zerop (first transition))
                (push (copy-list (setf lfreq1 (sort (cons (second transition) lfreq1) '<))) mutations))
               ((/= (first transition) (second transition))
@@ -72,11 +80,11 @@ output : a series of chord in the form of a list of lists of midics.
                         (intersection (intersection lfreq1 lfreq2)))
       (mapc #'(lambda (comp1)
                 (let ((distance 0) transition (target lfreq2))
-                  (while  target
-                    (setf comp2 (pop target))
-                    (unless (or (member comp1 intersection) (member comp2 intersection))
-                      (setf distance  (abs (- comp2 comp1)))
-                      (push  (list comp1 comp2  distance) transition)))
+                  (loop while target
+                        do (setf comp2 (pop target))
+                        (unless (or (member comp1 intersection) (member comp2 intersection))
+                          (setf distance  (abs (- comp2 comp1)))
+                          (push  (list comp1 comp2  distance) transition)))
                   (when transition
                     (push (sort  transition  #'f-local-order :key 'third)
                           l-transitions))))
@@ -86,8 +94,8 @@ output : a series of chord in the form of a list of lists of midics.
       (let (forbidden a-transition)
         (dolist (transition l-transitions)
           (setf a-transition 
-                (find  nil transition 
-                       :test #'(lambda (x y) (declare (ignore x))
+                (find nil transition 
+                      :test #'(lambda (x y) (declare (ignore x))
                                 (not (member (second y) forbidden))) ))
           (cond
            (a-transition
@@ -119,7 +127,7 @@ approx (1, 2, 4, 8) tells the approximation used for finding common notes.
 
 Outputs a chord-seq object"
   
-  (let ((time 0)  prevch  poly vel-list del-list)
+  (let ((time 0) prevch poly vel-list del-list)
     (setf vel-list (Lvel chseq)
           del-list (x->dx (Lonset chseq))
           chseq (Lmidic chseq))
@@ -128,8 +136,8 @@ Outputs a chord-seq object"
     (mapc #'(lambda (curch curvels curdel)
               (mapc
                #'(lambda (n1 vel)
-                   (if (not (memq n1 prevch))
-                     (push (list n1 time curdel vel) poly)
+                   (if (not (member n1 prevch :test #'eq))
+                       (push (list n1 time curdel vel) poly)
                      (let ((event (member n1 poly :test #'(lambda (n e) (= n (car e))))))
                        (incf  (caddar event) curdel))))
                curch

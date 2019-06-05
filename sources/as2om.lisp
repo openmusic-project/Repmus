@@ -4,46 +4,45 @@
 ;;            Gerard Assayag, Claudy Malherbe, Joshua Fineberg, Peter Hanappe  © IRCAM 1996
            
 
-
 (in-package :om)
 
-(defclass partial ()
+(defclass omas-partial ()
   ((ponset :accessor ponset :initarg :ponset)
    (outset :accessor outset :initarg :outset)
    (frequency :accessor frequency :initarg :frequency)
    (amplitude :accessor amplitude :initarg :amplitude)
 ))
 
-(defclass partial-set ()
+(defclass omas-partial-set ()
   ((partials :accessor partials :initarg :partials)
    (inter-onsets :accessor inter-onsets :initarg :inter-onsets)
    (chord-delta :accessor chord-delta :initarg :chord-delta)
 )) 
 
-(defmethod pduration ((partial partial))
+(defmethod pduration ((partial omas-partial))
   (- (outset partial) (ponset partial)))
 
-(defmethod round-time ((partial partial))
-  (setf (ponset partial)  (round (* 100  (ponset partial))))
+(defmethod round-time ((partial omas-partial))
+  (setf (ponset partial) (round (* 100 (ponset partial))))
   (setf (outset partial) (max (ponset partial) (round (* 100 (outset partial)))))
   partial)
 
-(defmethod move-onset ((partial partial) onset)
+(defmethod move-onset ((partial omas-partial) onset)
   (setf (outset partial) (+ (outset partial) (- (ponset partial) onset))
         (ponset partial) onset)
   partial)
 
-(defmethod set-inter-onset ((partial-set partial-set))
+(defmethod set-inter-onset ((partial-set omas-partial-set))
   (setf (inter-onsets partial-set)
         (loop for partial1 in (partials partial-set)
               for partial2 in (rest (partials partial-set))
               collect (- (ponset partial2) (ponset partial1))))
   partial-set)
 
-(defmethod round-time ((partial-set partial-set))
+(defmethod round-time ((partial-set omas-partial-set))
   (loop
-    for partial in (partials partial-set)
     with window-left = 0 and window-right = (chord-delta partial-set)
+    for partial in (partials partial-set)
     if (< (ponset partial) window-right) do
     (move-onset partial window-left)
     else do (setf window-left (ponset partial)
@@ -56,46 +55,46 @@
   (when (consp (first analyse)) (setf analyse (first analyse)))
   (unless (string= (symbol-name (pop analyse)) "PARTIALS")
     (error "This is not a spectral analysis"))
-  (let ((nbpartials (pop analyse)))
-    (setf analyse
-          (mapcar #'(lambda (partial)
-                      (pop partial)
-                      (loop with nbpoints = (pop partial)
-                            with first-date = (first partial)
-                            with last-date 
-                            for date in partial by #'cdddr
-                            for freq in (cdr partial) by #'cdddr
-                            for amp in (cddr partial) by #'cdddr
-                            do (setf last-date date) 
-                            sum freq into freq-sum
-                            sum amp into amp-sum
-                            finally (return (list first-date last-date 
-                                                  (/ freq-sum nbpoints) 
-                                                  (/ amp-sum nbpoints)))))
-                  analyse))
-    (setf analyse (mat-trans analyse)) 
-    (setf (fourth analyse)
-          (om-round 
-           (om-scale (mapcar #'(lambda (x) (* x (exp (* x 2))))
-                             (om-scale (fourth analyse) 0.0 1.0))
-                     vmin vmax)))
-    (let
+  
+  (setf analyse
+        (mapcar #'(lambda (partial)
+                    (pop partial)
+                    (loop with nbpoints = (pop partial)
+                          with first-date = (first partial)
+                          with last-date 
+                          for date in partial by #'cdddr
+                          for freq in (cdr partial) by #'cdddr
+                          for amp in (cddr partial) by #'cdddr
+                          do (setf last-date date) 
+                          sum freq into freq-sum
+                          sum amp into amp-sum
+                          finally (return (list first-date last-date 
+                                                (/ freq-sum nbpoints) 
+                                                (/ amp-sum nbpoints)))))
+                analyse))
+  (setf analyse (mat-trans analyse)) 
+  (setf (fourth analyse)
+        (om-round 
+         (om-scale (mapcar #'(lambda (x) (* x (exp (* x 2))))
+                           (om-scale (fourth analyse) 0.0 1.0))
+                   vmin vmax)))
+  (let
       ((partial-set
-        (make-instance 'partial-set
-          :chord-delta delta
-          :partials
-          (apply  #'mapcar
-                  #'(lambda (onset outset freq amp)
-                      (round-time (make-instance 'partial :ponset onset :outset outset :frequency freq
-                                                 :amplitude amp)))
-                  analyse))))
-      (setf (partials partial-set)
-            (loop for partial in (partials partial-set)
-                  when (<= fmin (frequency partial) fmax)
-                  collect partial))
-      (round-time partial-set)
-      (set-inter-onset partial-set)
-      partial-set)))
+        (make-instance 'omas-partial-set
+                       :chord-delta delta
+                       :partials
+                       (apply  #'mapcar
+                               #'(lambda (onset outset freq amp)
+                                   (round-time (make-instance 'omas-partial :ponset onset :outset outset :frequency freq
+                                                              :amplitude amp)))
+                               analyse))))
+    (setf (partials partial-set)
+          (loop for partial in (partials partial-set)
+                when (<= fmin (frequency partial) fmax)
+                collect partial))
+    (round-time partial-set)
+    (set-inter-onset partial-set)
+    partial-set))
 
 (defun partials->chords (partial-set approx npoly)
   (and (partials partial-set)
@@ -117,10 +116,9 @@
                partial-list))
          (make-instance 'chord-seq
            :lmidic chord-list
-           :lonset  (om* 10 (mapcar #'(lambda ( partials) (ponset (first partials)))  partial-list))) )))
+           :lonset  (print (om* 10 (mapcar #'(lambda (partials) (ponset (first partials))) partial-list)))) )))
          
   
-
 (defun reduce-partials (partials approx npoly)
   (let ((pbuf ()) (partials (sort partials #'(lambda (p1 p2) (< (frequency p1) (frequency p2))))))
     (loop for partial in partials
@@ -163,4 +161,55 @@ output :
 a list of chords to be connected to a chordseq module.
 "
   (partials->chords (mk-partial-set analyse (round delta 10) vmin vmax (mc->f mmin) (mc->f mmax)) approx npoly))
+
+
+
+
+;;;=============================================
+;;; AUDIOSCULPT SDIF 
+;;; Jean Bresson  © IRCAM 2005
+;;;=============================================
+
+(defun mk-partial-set-from-sdif (sdiffile delta vmin vmax fmin fmax)
+  (let ((analyse (GetSDIFChords sdiffile)))
+    (setf analyse (mat-trans analyse))
+    (setf (fourth analyse) (om-round (om-scale (fourth analyse) vmin vmax)))
+    (setf analyse (list (second analyse) (third analyse) (first analyse) (fourth analyse)))
+    (let ((partial-set
+           (make-instance 'omas-partial-set
+                          :chord-delta delta
+                          :partials
+                          (apply #'mapcar
+                                 #'(lambda (onset dur freq amp)
+                                     (round-time (make-instance 'omas-partial :ponset onset :outset (+ onset dur) :frequency freq
+                                                                :amplitude amp)))
+                                 analyse))))
+      (setf (partials partial-set)
+            (loop for partial in (partials partial-set)
+                  when (<= fmin (frequency partial) fmax)
+                  collect partial))
+       
+      (round-time partial-set)
+      (set-inter-onset partial-set)
+      partial-set)))
+
+(defmethod! AS->OM ((analyse sdiffile)
+                    (vmin integer)
+                    (vmax integer)
+                    (delta integer)
+                    (mmin integer)
+                    (mmax integer)
+                    (approx integer)
+                    (npoly integer ))
+  (partials->chords 
+   (mk-partial-set-from-sdif analyse (round delta 10) vmin vmax (mc->f mmin) (mc->f mmax)) 
+   approx npoly))
+
+
+
+
+
+
+
+
 

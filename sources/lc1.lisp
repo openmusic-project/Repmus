@@ -1,17 +1,11 @@
-(in-package ::om)
-
-
-;;
-
-
 ;;            Librairie CRIBLES
 ;;
 ;;            A Partir de la librairie RepMus PW
 ;;            Gerard Assayag, Claudy Malherbe, Andre Riotte, Franck Avitabile  © IRCAM 1996
 ;;            Portage OM: Karim HADDAD  © IRCAM 2001
 
- 
 
+(in-package ::om)
 
 ; postulat : on suppose toutes les listes triees par ordre croissant
 
@@ -21,7 +15,7 @@
 ;*********************************************************************************************************
 ;* definition des operateurs binaires et unaires                                                         *
 ;*********************************************************************************************************
-(setq operateur_binaire
+(defparameter operateur_binaire
       '((+ unie)
         (- intersecte)         ; i.e. difference ensembliste
         (* compose)            ;   &   intersection
@@ -30,7 +24,7 @@
         ))
 ; l'affectation, operateur binaire est traite comme cas particulier dans l'evaluation de l'expression lc
 
-(setq operateur_unaire
+(defparameter operateur_unaire
       '((c complementaire)
         (d definit)
         (a aleatoire)
@@ -45,8 +39,8 @@
 ; si le crible a un bornage, la borne inf et la borne sup sont sans signification
 ; quand on applique un crible sur une structure, les bornes sont mis a jour en fonction de
 ; la taille de ctte structure
-(setf b> 200)
-(setf b< 0)
+(defparameter b> 200)
+(defparameter b< 0)
 
 ;*********************************************************************************************************
 ;* fonction de creation et de manipulation de cribles proprement dit                                     *
@@ -56,6 +50,7 @@
 
 
 (defun aleatoire (pas)
+  (declare (special b< b>))
   (let ((pas (pop pas))
         (b1 (or (pop pas) b<))
         (b2 (or (pop pas) b>)))
@@ -70,6 +65,7 @@
 ; genere (classe residu b< b>) : le crible classe residu. Le bornage est optionel
 (defun genere (class res &optional (b1 b<) (b2 b>))
   ; la ligne ci-dessous sert uniquement dans le cas de partition gouffre
+  (declare (special b< b>))
   (if (> b1 3639) (progn (setf b1 (- b1 3640)) (setf b2 (- b2 3640))))
   (let ((a (+ res (* class (floor ( / b2 class))))))
     (if (> a b2) (setf a (- a class)))
@@ -196,6 +192,9 @@
 ;* version 2 plus joli et surtout plus complete ( operateur unaire et binaire )       *
 ;**************************************************************************************
 (defun inpre (ligne)
+  
+  (declare (special operateur_unaire operateur_binaire))
+  
   (if (not(null ligne))
     (cond 
      
@@ -321,6 +320,7 @@
 
 ; meme chose que eval-simple avec un bornage automatique
 (defun evaluer (crible)
+  (declare (special b> b<))
   (setf b> 200)
   (setf b< 0)
   (funcall (fdefinition  (intern (string crible) ::om))))
@@ -332,7 +332,7 @@
 
 ; la fonction crible crible la liste donnee avec un crible definie dans lc 
 (defun crible (list crible)
-  ""
+  (declare (special b>))
   (setf b> (long list))
   (compose (eval-simple crible) list))
 
@@ -579,14 +579,13 @@
          (t (push i z))))
       (reverse z))))
 
+
+
+
 ;;;;;; OM Interface
 
-
-
-(om::defmethod! lc ((prog-lc  list))
-
-
-   :initvals '('()) 
+(om::defmethod! lc ((prog-lc list))
+   :initvals '(()) 
    :indoc '("prog-lc") 
    :icon 250
    :doc  "Computes a set of sieves (cribles) from a set of sieve expressions contained
@@ -640,36 +639,35 @@ output :
 
 nil
 "
-
         
   (setf prog-lc (put-in-package prog-lc ::om))
   (let  ((y 2))
-    (while y
-      (setf y (if  (or (equal prog-lc '(%)) (not (equal (pop prog-lc) '%)))
-                nil
-                (if (equal (first prog-lc) '%)
-                  nil
-                  (let ((ret ()))      
-                    (do
-                      ((pop prog-lc))
-                      ((or (null prog-lc) (equal (first prog-lc) '%)))
-                      (push (pop prog-lc) ret)
-                      )
-                    (reverse ret) 
-                    ))))
+    (loop while y do
+          (setf y (if  (or (equal prog-lc '(%)) (not (equal (pop prog-lc) '%)))
+                      nil
+                    (if (equal (first prog-lc) '%)
+                        nil
+                      (let ((ret ()))      
+                        (do
+                            ((pop prog-lc))
+                            ((or (null prog-lc) (equal (first prog-lc) '%)))
+                          (push (pop prog-lc) ret)
+                          )
+                        (reverse ret) 
+                        ))))
       
-      (if (traiter_commentaire y)  
-        (progn
-          (funcall (setf (fdefinition (first y)) (eval (list 'function (list 'lambda nil  (inpre (cdr (cdr y))))))))
-          (if (not (null (first y))) (format t (string  (first y))))
-          )
-        )
-      )))
+          (if (traiter_commentaire y)  
+              (progn
+                (funcall (setf (fdefinition (first y)) (eval (list 'function (list 'lambda nil  (inpre (cdr (cdr y))))))))
+                (if (not (null (first y))) (format t (string (first y))))
+                )
+            )
+          )))
 
 
 (om::defmethod! crible-list ((list list )  (crible list ))
 
-   :initvals '('() '()) 
+   :initvals '(() ()) 
    :indoc '("list" "crible") 
    :icon 250
    :doc "Apply a sieve defined with the 'lc' box to any list.
@@ -687,149 +685,64 @@ a list."
       (mapcar #'(lambda (c)  (crible list c)) crible)))
 
 
-
-
-
-
-
-
-
-
-
 ;-------------------------------GET-MIDICS-FROM-objs---------------------------
 ;-------------------------------------------------------------------------------
 
 
 
 (om::defmethod! getmidics ((self poly))
-(mapcar #'(lambda (x) (getmidics x))
+  (mapcar #'(lambda (x) (getmidics x))
           (inside self)))
 
 (om::defmethod! getmidics ((self voice))
-(mapcar #'(lambda (x) (getmidics x))
+  (mapcar #'(lambda (x) (getmidics x))
           (inside self)))
 
 (om::defmethod! getmidics ((self chord-seq))
-(mapcar #'(lambda (x) (getmidics x))
+  (mapcar #'(lambda (x) (getmidics x))
           (inside self)))
 
 (om::defmethod! getmidics ((self multi-seq))
-(mapcar #'(lambda (x) (getmidics x))
+  (mapcar #'(lambda (x) (getmidics x))
           (inside self)))
 
 (om::defmethod! getmidics ((self measure))
-(mapcar #'(lambda (x) (getmidics x))
+  (mapcar #'(lambda (x) (getmidics x))
           (inside self)))
 
 (om::defmethod! getmidics ((self chord))
-(mapcar #'(lambda (x) (getmidics x))
+  (mapcar #'(lambda (x) (getmidics x))
           (inside self)))
 
-(om::defmethod! getmidics ((self rest))
-())
+
+#-om7(om::defmethod! getmidics ((self rest)) ())
+#+om7(om::defmethod! getmidics ((self r-rest)) ())
 
 (om::defmethod! getmidics ((self group))
-(mapcar #'(lambda (x) (getmidics x))
+  (mapcar #'(lambda (x) (getmidics x))
           (inside self)))
 
 (om::defmethod! getmidics ((self continuation-chord))
-())
-
+  ())
 
 (om::defmethod! getmidics ((self note))
-(midic self))
+  (midic self))
 
 
 ;Gives the same as above for VOICE & POLY but without leaves 
 ; works for chords!!!!
 
 (om::defmethod! getpitch ((self voice))
-(let ((pitchtree (chords self)))
-  (mapcar #'(lambda (x) (getmidics x)) pitchtree)))
+  (let ((pitchtree (chords self)))
+    (mapcar #'(lambda (x) (getmidics x)) pitchtree)))
 
 
 (om::defmethod! getpitch ((self poly))
-   (let ((voices (inside self)))
-(mapcar #'(lambda (x) (getpitch x)) voices)))
-
-
-
-
-
-
-
-
-
-
+  (let ((voices (inside self)))
+    (mapcar #'(lambda (x) (getpitch x)) voices)))
 
 
 ;--------------------------------------crible-voice-------------------------------------------
-
-
-
-;----------------------------------------grouper-utility------------------------------------
-; This functions groups all tied notes and rest into a single one
-; in order to avoid  a bug in Cmn and to output a clear score
-
-
-;Already defined in Karim.lisp
-
-;=====================================reducetree==============================================
-
-(defun grouper1 (liste)
-"groups succesive floats"
-  (if (null liste)
-    liste
-    (let* ((first (car liste))
-           (rest (rest liste))
-           )
-      (if (numberp first)
-        (if (plusp first)
-          (cons (+ first (loop while (and (numberp (first rest)) (floatp (first rest)))
-                               sum (round (pop rest))))
-                (grouper1 rest))
-          (cons first (grouper1 rest)))
-        (cons (grouper1 first) (grouper1 rest))))))
-                
-                  
-
-(defun grouper2  (liste)
-"groups succesive rests (-1) into one"
-  (if (null liste)
-    liste
-    (let* ((first (car liste))
-           (rest (rest liste)))
-      (if (numberp first)
-        (if (plusp first) 
-          (cons first (grouper2 rest))
-          (cons (+ first (loop while (and (integerp (first rest)) (minusp (first rest)))
-                               sum  (pop rest)))
-                (grouper2 rest)))
-        (cons (grouper2 first) (grouper2 rest))))))
- 
-
-(defun grouper3 (liste)
-"reduces concatenated rests in the form of (1(-3)) into -1"
-  (if (atom  liste)
-    liste
-    (if (and (numberp (first (second liste)))
-             (minusp (first (second liste)))
-             (null (rest (second liste)))
-             (not (listp (first liste))))
-      (- (first liste))
-      (list (first liste)
-            (mapcar 'grouper3 (second liste))))))
-
-(om::defmethod! reducetree ((tree t))
-   :initvals '(? ((4//4 (1 (1 (1 2 1 1)) 1 1)) (4//4 (1 (1 (1 2 1 1)) -1 1))))
-   :indoc '("tree")
-   :icon 250
-   :doc "reduces and simplifies a tree by concatenating consecutive rests and floats
-into a single correct note"
-(grouper3 (grouper2 (grouper1 tree))))
-
-
-
 
 
 (defun recombine-tree-norm (pulses groups signatures)
@@ -846,19 +759,19 @@ into a single correct note"
 
 
 (om::defmethod! crible-voice ((metrique t)
-                                 (crible list)
-                                 (option symbol)
-                                 (mode symbol)
-                                 &optional (midics '()))
+                              (crible list)
+                              (option symbol)
+                              (mode symbol)
+                              &optional (midics '()))
    
    
    
-   :initvals '( t '() 'silence 'opt '())
-   :menuins '((2 (("silence" 'silence) ("liaison" 'liaison)))
+  :initvals '( t '() 'silence 'opt '())
+  :menuins '((2 (("silence" 'silence) ("liaison" 'liaison)))
              (3 (("opt" 'opt) ("norm" 'norm)))) 
-   :indoc '("metrique" "crible" "option" "mode" "midics") 
-   :icon 250
-   :doc "
+  :indoc '("metrique" "crible" "option" "mode" "midics") 
+  :icon 250
+  :doc "
 Apply a sieve defined with the 'lc' box to a metric/rythmic structure.
 
 parameters : 
@@ -875,49 +788,52 @@ connect to a 'rtm' or 'poly-rtm' depending on the type of output.
  "
    
    
-   
-   (when (and metrique crible)
-     (let* ((tree (if (listp metrique) metrique (tree metrique)))
-            (length-crible (length crible))
-            (pitches (cond
-                      ((and (null midics) (listp metrique)) 
-                       (repeat-n (getpitch metrique) length-crible))
-                      ((and (null midics) (not (listp metrique))) (repeat-n '(6000) length-crible))
-                      ((and (atom midics) (listp metrique)) 
-                       (repeat-n midics length-crible))
-                      ((and (atom midics) (not (listp metrique))) (repeat-n midics length-crible))
-                      (t midics)))
-            (split-tree (mat-trans (cadr tree)))
-            (pulses (flat-once (second split-tree)))
-            (pulse-segments (mapcar #'(lambda (x) (length x))(second split-tree)))
-            (meas-sign (first split-tree))
-            single res )
+  (declare (special b>))
+
+  (when (and metrique crible)
+    (let* ((tree (if (listp metrique) metrique (tree metrique)))
+           (tree (if (atom (car tree)) tree (list (length tree) tree)))
+           (length-crible (length crible))
+           (pitches (cond
+                     ((and (null midics) (listp metrique)) 
+                      (repeat-n (getpitch metrique) length-crible))
+                     ((and (null midics) (not (listp metrique))) (repeat-n '(6000) length-crible))
+                     ((and (atom midics) (listp metrique)) 
+                      (repeat-n midics length-crible))
+                     ((and (atom midics) (not (listp metrique))) (repeat-n midics length-crible))
+                     (t midics)))
+           (split-tree (mat-trans (cadr tree)))
+           (pulses (flat-once (second split-tree)))
+           (pulse-segments (mapcar #'(lambda (x) (length x))(second split-tree)))
+           (meas-sign (first split-tree))
+           ;; single 
+           res)
        
-       (setf b> (long-rtm   pulses ))
-       (unless (listp crible) (setf single t))
-       (setf crible (om::list! crible))
-       (setf res
-             (setf res (case mode
-                         (opt (recombine-tree-opt 
+      (setf b> (long-rtm  pulses))
+      ;; (unless (listp crible) (setf single t))
+      (setf crible (om::list! crible))
+      (setf res
+            (setf res (case mode
+                        (opt (recombine-tree-opt 
+                              (mapcar #'(lambda (one-crible)
+                                          (case option
+                                            (silence (sieve-rtm-tree pulses (eval-simple one-crible) nil))
+                                            (liaison (sieve-rtm-tree pulses (eval-simple one-crible) t))))
+                                      crible) pulse-segments meas-sign))
+                        (norm (recombine-tree-norm 
                                (mapcar #'(lambda (one-crible)
                                            (case option
                                              (silence (sieve-rtm-tree pulses (eval-simple one-crible) nil))
                                              (liaison (sieve-rtm-tree pulses (eval-simple one-crible) t))))
-                                       crible) pulse-segments meas-sign))
-                         (norm (recombine-tree-norm 
-                                (mapcar #'(lambda (one-crible)
-                                            (case option
-                                              (silence (sieve-rtm-tree pulses (eval-simple one-crible) nil))
-                                              (liaison (sieve-rtm-tree pulses (eval-simple one-crible) t))))
-                                        crible) pulse-segments meas-sign)))))
+                                       crible) pulse-segments meas-sign)))))
        
        
-       (if (= 1 (length crible)) 
-         (make-instance 'poly
-           :voices (mapcar #'(lambda (x) (make-instance 'voice :tree x :chords pitches)) res))
-         (make-instance 'poly
-           :voices (mapcar #'(lambda (x y) (make-instance 'voice :tree x :chords y)) res pitches))
-         ))))
+      (if (= 1 (length crible)) 
+          (make-instance 'poly
+                         :voices (mapcar #'(lambda (x) (make-instance 'voice :tree x :chords pitches)) res))
+        (make-instance 'poly
+                       :voices (mapcar #'(lambda (x y) (make-instance 'voice :tree x :chords y)) res pitches))
+        ))))
 
 
 
@@ -963,7 +879,7 @@ from a given list of <pitches>."
 
 ;=======================================PERSONNAL METHODS=====================================
 (om::defmethod! rytm-pair ((lst list))
-  :initvals (list '(1 2)) 
+  :initvals '((1 2)) 
   :indoc '("list")
   :icon 250
   :doc "donne des paires periodiques"

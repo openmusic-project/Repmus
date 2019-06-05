@@ -1,16 +1,12 @@
-(in-package :om)
-
-
 ;;
 ;;
 ;;            Librairie RepMus
 ;;
 ;;            Gerard Assayag, Claudy Malherbe  © IRCAM 1996
 ;;            OpenMusic Version March 98
-           
 
- 
 
+(in-package :om)
 
 ; an alphabet A
 ; a collection S of sequences (S is a subset of A*) (a node list)
@@ -111,17 +107,17 @@
   (if (null (childs root))
     root
     (x-append 
-     (and (memq (traverse-tree-m G)  '(pre full)) 
+     (and (member (traverse-tree-m G) '(pre full) :test #'eq)
           root) 
      (mapcon #'(lambda (child-list) 
                   (x-append
                    (tree-traversal-2 G (cdr (first child-list)))
-                   (and (memq (traverse-tree-m G)  '(in full))
+                   (and (member (traverse-tree-m G) '(in full) :test #'eq)
                         (rest child-list)
                         root)))
               (childs root))
-             ;(epw::permut-random (copy-list (key root))))
-     (and (memq (traverse-tree-m G) '(post full))
+     
+     (and (member (traverse-tree-m G) '(post full) :test #'eq)
           root))))
                   
 (defmethod traversals ((graph graph) (root node) link &key statmode (root-n 0) (order-p '>=))
@@ -146,7 +142,7 @@
                         else collect (ameliorate (content next-node) (content node))))))
     (loop for object in traversal
           for rest on traversal  
-          if (memq object rest) collect (clone object)
+          if (member object rest :test #'eq) collect (clone object)
           else collect object)))
 
 ;; -------------------------------- Minimum Spanning Tree
@@ -170,11 +166,11 @@
             (father u) nil))
     (setf (key root) (gweight-min a-graph)
           (father root) nil)
-    (while queue
+    (loop while queue do
       (setf u (pop-min queue (gweight-order-p a-graph)))
       (push u tree)
       (dolist (uv (adj-list u))
-        (when (and (memq (gdestination uv) queue)
+        (when (and (member (gdestination uv) queue :test #'eq)
                    (funcall (gweight-order-p a-graph)
                             (gweight uv)
                             (key (gdestination uv))))
@@ -215,7 +211,7 @@ A graph object."
                        for vels in (LVel coll)
                        for durs in (LDur coll)
                        for chans in (LChan coll)
-                       collect (mki 'chord :LMidic midics :LVel vels :LDur durs :Lchan chans))))
+                       collect (make-instance 'chord :LMidic midics :LVel vels :LDur durs :Lchan chans))))
     (when (subtypep (type-of (first coll)) 'chord)
       (setf coll (mapcar #'clone coll))
       )
@@ -359,9 +355,7 @@ a predicate function object to be connected to the 'pred' input of a 'make-graph
 
 
 ; ------------------- chord utilities
-
-
-
+; does not work on OM7
 
 (defmethod next-same-note ((self note))
   (and (parent self)
@@ -377,9 +371,9 @@ a predicate function object to be connected to the 'pred' input of a 'make-graph
 
 (defmethod tie-same-note ((self note))
   (when (or (not (tie self)) (equal (tie self) 'end))
-    (loop for note = (next-same-note self) then (next-same-note note)
+    (loop with note2
+          for note = (next-same-note self) then (next-same-note note)
           while note
-          with note2
           do (setf (tie note) 'continue note2 note)
           finally (when note2 (setf (tie note2) 'end (tie self) (if (tie self) 'continue 'begin))))))
 
@@ -391,9 +385,6 @@ a predicate function object to be connected to the 'pred' input of a 'make-graph
   self)
     
 
-
-
-
 (defmethod! tie-all ((self voice))
   :initvals (list ())
   :indoc '("a Voice")
@@ -402,9 +393,5 @@ a predicate function object to be connected to the 'pred' input of a 'make-graph
   (tie-same-note (clone self)))
 
 
-
-;(OMAddMethod 'graph-tour *package-user* :protect t)
-;(OMAddMethod 'make-graph *package-user* :protect t)
-;(OMAddMethod 'tie-all *package-user* :protect t)
 
 
