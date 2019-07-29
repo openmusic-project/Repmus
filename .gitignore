@@ -1,9 +1,6 @@
-*.lisp~
+
 *.*~
-*.xfasl
-*.64xfasl
-*.ofasl
-*.*ufasl
+*.*fasl
 #*#
 
 .DS_Store
