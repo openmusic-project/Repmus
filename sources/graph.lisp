@@ -2,7 +2,7 @@
 ;;
 ;;            Librairie RepMus
 ;;
-;;            Gerard Assayag, Claudy Malherbe  © IRCAM 1996
+;;            Gerard Assayag, Claudy Malherbe IRCAM 1996
 ;;            OpenMusic Version March 98
 
 

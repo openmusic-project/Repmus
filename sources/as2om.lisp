@@ -1,7 +1,7 @@
 ;;
 ;;            Librairie RepMus
 ;;
-;;            Gerard Assayag, Claudy Malherbe, Joshua Fineberg, Peter Hanappe  © IRCAM 1996
+;;            Gerard Assayag, Claudy Malherbe, Joshua Fineberg, Peter Hanappe IRCAM 1996
            
 
 (in-package :om)
@@ -167,7 +167,7 @@ a list of chords to be connected to a chordseq module.
 
 ;;;=============================================
 ;;; AUDIOSCULPT SDIF 
-;;; Jean Bresson  © IRCAM 2005
+;;; Jean Bresson  Â© IRCAM 2005
 ;;;=============================================
 
 (defun mk-partial-set-from-sdif (sdiffile delta vmin vmax fmin fmax)

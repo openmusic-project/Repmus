@@ -1,8 +1,8 @@
 ;;            Librairie CRIBLES
 ;;
 ;;            A Partir de la librairie RepMus PW
-;;            Gerard Assayag, Claudy Malherbe, Andre Riotte, Franck Avitabile  © IRCAM 1996
-;;            Portage OM: Karim HADDAD  © IRCAM 2001
+;;            Gerard Assayag, Claudy Malherbe, Andre Riotte, Franck Avitabile  Â© IRCAM 1996
+;;            Portage OM: Karim HADDAD  IRCAM 2001
 
 
 (in-package ::om)
@@ -110,7 +110,7 @@
     (reverse z)))
 
 ; difference au sens ensembliste : x/y=x-y=intersecte(x complementaire(y))
-; = tout ce qui appartient ˆ x et qui n'appartient pas ˆ y
+; = tout ce qui appartient a x et qui n'appartient pas a y
 ; question : peut on traiter directement sur ce qui suit le test si vide
 ; exemple : (5 1)-(5 0)=vide car ...
 (defun difference ( crible2 crible1)
@@ -156,7 +156,7 @@
 
 ; renvoie true si la ligne est un commentaire et l'affiche sinon
 (defun traiter_commentaire(y)
-  (if (or (null y) (equal (first y) '¤)) nil y))
+  (if (or (null y) (equal (first y) 'Â¤)) nil y))
 
 ;calcule la longueur d'une liste . Cette fonction a ete sujette a des annees de recherche
 (defun long (liste)
