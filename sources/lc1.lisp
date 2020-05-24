@@ -715,8 +715,8 @@ a list."
           (inside self)))
 
 
-#-om7(om::defmethod! getmidics ((self rest)) ())
-#+om7(om::defmethod! getmidics ((self r-rest)) ())
+#-om-sharp(om::defmethod! getmidics ((self rest)) ())
+#+om-sharp(om::defmethod! getmidics ((self r-rest)) ())
 
 (om::defmethod! getmidics ((self group))
   (mapcar #'(lambda (x) (getmidics x))
