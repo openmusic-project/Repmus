@@ -355,7 +355,6 @@ a predicate function object to be connected to the 'pred' input of a 'make-graph
 
 
 ; ------------------- chord utilities
-; does not work on OM7
 
 (defmethod next-same-note ((self note))
   (and (parent self)
