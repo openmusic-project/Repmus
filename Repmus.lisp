@@ -35,7 +35,7 @@
          ("Graphs" nil nil (make-graph graph-tour) nil)
          ))
 
-(set-lib-release 1.1)
+(set-lib-release 1.2)
 
 
 
