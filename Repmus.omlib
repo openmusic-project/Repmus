@@ -4,7 +4,7 @@
 
 (:om-lib
  
- (:version 1.2)
+ (:version 1.3)
 
  (:doc "Functions from the Repmus team.")
 
@@ -17,6 +17,7 @@
   "sources/chordmap"
   "sources/lc1"
   "sources/as2om"
+  "sources/om-fugit"
   )
 
  ;;; DECLARED SYMBOLS VISIBLE AND ACCESSIBLE THROUGH THE OM PACKAGE TREE
@@ -26,6 +27,7 @@
    (:package (:name "Chords") (:functions autotransp mutation map-chords chseq->poly tie-all))
    (:package (:name "Cribles") (:functions lc crible-list crible-voice eval-crible))
    (:package (:name "Graphs") (:functions make-graph graph-tour))
+   (:package (:name "Metrics-Modulations") (:functions s::feuillete s::tempo-intp))
    ))
 )
 
