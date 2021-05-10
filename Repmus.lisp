@@ -7,6 +7,7 @@
 ;;;; date: 1996
 ;;;; © IRCAM 1996
 ;;;; © IRCAM 1998 
+;;;; © IRCAM 1996/2021 - Metrics Modulations - From PatchWork to OpenMusic: PHRaposo
 ;;;;============================================================================ 
 
 (in-package :om)
@@ -23,6 +24,7 @@
         "chordmap"
         "lc1"
         "as2om"
+        "om-fugit"
         ))
 
 ;--------------------------------------------------
@@ -33,9 +35,10 @@
          ("Chords" nil nil (autotransp mutation map-chords chseq->poly tie-all) nil)
          ("Cribles" nil nil (lc crible-list crible-voice eval-crible) nil)
          ("Graphs" nil nil (make-graph graph-tour) nil)
+         ("Metrics-Modulations" nil nil (s::feuillete s::tempo-intp) nil)
          ))
 
-(set-lib-release 1.2)
+(set-lib-release 1.3)
 
 
 
