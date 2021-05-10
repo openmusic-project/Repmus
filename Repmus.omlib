@@ -27,7 +27,7 @@
    (:package (:name "Chords") (:functions autotransp mutation map-chords chseq->poly tie-all))
    (:package (:name "Cribles") (:functions lc crible-list crible-voice eval-crible))
    (:package (:name "Graphs") (:functions make-graph graph-tour))
-   (:package (:name "Metrics-Modulations") (:functions s::feuillete s::tempo-intp))
+   (:package (:name "Metrics-Modulations") (:functions "s::feuillete" "s::tempo-intp"))
    ))
 )
 
