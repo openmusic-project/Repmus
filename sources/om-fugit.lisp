@@ -269,7 +269,7 @@
        (assert!  (=v (*v p b) m))
        (assert!  (=v (*v t-m b) t-p))
         ;; note: the real variable cannot be restricted to be an integer,
-        ;; but it can be equal and integer, since (= 1 1.0) is true.
+        ;; but it can be equal an integer, since (= 1 1.0) is true.
        (assert! (=v (an-integerv) (*v v b))) ;phraposo/2025
        ;(assert! (integerpv (*v v b)))
        (assert! (=v (*v p b) (*v p2 b2)))
