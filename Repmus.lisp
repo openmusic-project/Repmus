@@ -7,7 +7,7 @@
 ;;;; date: 1996
 ;;;; © IRCAM 1996
 ;;;; © IRCAM 1998 
-;;;; © IRCAM 1996/2021 - Metrics Modulations - From PatchWork to OpenMusic: PHRaposo
+;;;; © IRCAM 1996/2021 - Metrics Modulations - From PatchWork to OpenMusic: ported by Paulo Raposo
 ;;;;============================================================================ 
 
 (in-package :om)
@@ -34,12 +34,11 @@
 (om::fill-library '( ("Spectral analysis" nil nil (AS->OM) nil)
          ("Chords" nil nil (autotransp mutation map-chords chseq->poly tie-all) nil)
          ("Cribles" nil nil (lc crible-list crible-voice eval-crible) nil)
-         ("Graphs" nil nil (make-graph graph-tour) nil)
-         ("Metrics-Modulations" nil nil (s::feuillete s::tempo-intp) nil)
+         ("Graphs" nil nil (make-graph graph-tour mk-pred) nil)
+         ("Metrics-Modulations" nil nil (s::feuillete s::tempo-intp s::metric-modulation-ratios) nil)
          ))
 
-(set-lib-release 1.3)
-
+(set-lib-release 1.4)
 
 
 
