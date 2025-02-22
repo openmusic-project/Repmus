@@ -44,7 +44,7 @@
 ;;;     to Info-Screamer-Request@AI.MIT.EDU to be put on the
 ;;;     Info-Screamer@AI.MIT.EDU mailing list.
 
-(in-package :screamer)
+(in-package :s)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -89,11 +89,15 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; The following modifications were removed from this file because the Screamer rules
+;; are integrated to other functions (/-rule, *v2, /v2), which cannot be easily modified. (phraposo/2025)
+
+#|
 ;;; -------------------------------------------------- modifications to screamer
 
 ;;; allow screamer to state that 3/2 * 2/3 is an integer although the operands are not;
 
-(let ((ccl::*warn-if-redefine* nil))
+;(let ((ccl::*warn-if-redefine* nil))
 
   (defun *-rule-up (z x y) ;(print "rule: *-rule-up")
     (if (and (variable-integer? x) (variable-integer? y)) (restrict-integer! z))
@@ -103,14 +107,14 @@
     ;;       Gaussian integers from other complex numbers we could whenever X or
     ;;       Y was not a Gaussian integer.
     ;(if (and (or (variable-noninteger? x) (variable-noninteger? y))
-    ;	  (or (variable-real? x) (variable-real? y)))
+    ;         (or (variable-real? x) (variable-real? y)))
     ;  (progn (format t  "in *-rule-up : restrict non-integer : ")
     ;         (format t "~S = ~S * ~S~%" (variable-name z)) (variable-name x) (variable-name y)
     ;         (restrict-noninteger! z)))
     (if (and (variable-real? x) (variable-real? y)) (restrict-real! z))
     ;; note: Ditto.
     (if (and (or (variable-nonreal? x) (variable-nonreal? y))
-	     (or (variable-real? x) (variable-real? y)))
+             (or (variable-real? x) (variable-real? y)))
       (restrict-nonreal! z))
     (if (and (variable-real? x) (variable-real? y) (variable-real? z))
       ;; note: Can sometimes do better than the following even when ranges are
@@ -135,9 +139,9 @@
           (y (value-of y))
           (z (value-of z)))
       (if (and (not (variable? x))
-	       (not (variable? y))
-	       (not (variable? z))
-	       (/= z (* x y)))
+               (not (variable? y))
+               (not (variable? z))
+               (/= z (* x y)))
         (fail))))
   
   (defun *-rule-down (z x y)
@@ -158,19 +162,19 @@
           (y (value-of y))
           (z (value-of z)))
       (if (and (not (variable? x))
-	       (not (variable? y))
-	       (not (variable? z))
-	       (/= z (* x y)))
+               (not (variable? y))
+               (not (variable? z))
+               (/= z (* x y)))
         (fail))))
-  )
-
+ ; )
+|#
 ;;; a new value sequencer for screamer. It deals correctly with real number variables.
 
 
 
 (defmacro-compile-time value-list (&body forms)
   `(let ((values '())
-	 (last-value-cons nil)
+    (last-value-cons nil)
          (counter -1))
      (for-effects
        (let ((value (progn ,@forms)))
@@ -178,10 +182,10 @@
                    (when a-solution 
                      (format t "~S: ~S~%" (incf counter) a-solution)
                      (cond ((null values)
-		            (setf last-value-cons (list a-solution))
-		            (setf values last-value-cons))
-		           (t (setf (rest last-value-cons) (list  a-solution))
-		              (setf last-value-cons (rest last-value-cons)))))))))
+                    (setf last-value-cons (list a-solution))
+                    (setf values last-value-cons))
+                   (t (setf (rest last-value-cons) (list  a-solution))
+                      (setf last-value-cons (rest last-value-cons)))))))))
      values))
 
 #|
@@ -209,7 +213,6 @@
 
 
 
-
 ;;; -------------------------------------------------------------  metrics modulation 
 
 (defun ratio-set (num-max denom-max &key test)
@@ -231,7 +234,6 @@
 
 
 ;;; The time equation by F. Nicolas in Screamer.
-
 (defun time-eqn (impulsion t-impulsion pulsation t-pulsation bar t-bar speed beats)
   (value-list
     (solution
@@ -266,7 +268,10 @@
        (assert!  (=v (*v t-p v) t-i))
        (assert!  (=v (*v p b) m))
        (assert!  (=v (*v t-m b) t-p))
-       (assert! (integerpv (*v v b)))
+        ;; note: the real variable cannot be restricted to be an integer,
+        ;; but it can be equal an integer, since (= 1 1.0) is true.
+       (assert! (=v (an-integerv) (*v v b))) ;phraposo/2025
+       ;(assert! (integerpv (*v v b)))
        (assert! (=v (*v p b) (*v p2 b2)))
        (assert! (=v (/v p v) (/v p2 v2)))
        (assert! (=v pp1 (/v p2 p)))
@@ -286,14 +291,14 @@
 
 (defun make-metrics (tpulsation pulsation vitesse nbpulsations)
   (setf tpulsation
-        (/ (round tpulsation (/ 100.)) 100.0))
+        (/ (round tpulsation (/ 100.0)) 100.0))
   (cond
    ((and (integerp vitesse) (integerp nbpulsations))
     (list
      (float tpulsation)
      (list nbpulsations (denominator pulsation))
      (make-list nbpulsations :initial-element `(1 ,(make-list vitesse :initial-element 1)))))
-   ((and (integerp vitesse) (ccl::ratiop nbpulsations))
+   ((and (integerp vitesse) (om::ratiop nbpulsations))
     (multiple-value-bind (nbeat residue)
                          (floor (numerator nbpulsations) vitesse)
       (list (float tpulsation)
@@ -301,7 +306,7 @@
             (list (float nbpulsations) (denominator pulsation))
             `(,.(make-list nbeat :initial-element `(1 ,(make-list vitesse :initial-element 1)))
               (, (float (/ residue vitesse)) ,(make-list residue :initial-element 1))))))
-   ((and (ccl::ratiop vitesse) (integerp nbpulsations))
+   ((and (om::ratiop vitesse) (integerp nbpulsations))
     (list (float tpulsation)
           (list nbpulsations (denominator pulsation))
           (make-imp-puls-overlap vitesse nbpulsations)))))
@@ -415,13 +420,13 @@ output : a voice object.
     (format t "~%")
     (when sequence
       (mapc #'(lambda (solution)
-                (format t "S~S : ~S  ~S en vitesse ~S sur ~S temps" (incf counter) (third solution) 
-                        (fourth solution) (seventh solution) (eighth solution))
+                (format om::*om-stream* "S~S : ~S ^ ~S en vitesse ~S sur ~S temps" (incf counter) (third solution) 
+                        (om::om-round (float (fourth solution)) 2) (seventh solution) (eighth solution))
                 (when (/= (third solution) (ninth solution))
-                  (format t " / ~S  ~S en vitesse ~S sur ~S temps"  (ninth solution) 
+                  (format om::*om-stream* " / ~S ^ ~S en vitesse ~S sur ~S temps"  (ninth solution) 
                           (round  (* (fourth solution) (/  (nth 8  solution) (third solution))))
                           (nth 9  solution) (nth 10 solution)))
-                (format t "~%"))
+                (format om::*om-stream* "~%"))
             solutions)
        (build-rtm (second sequence) (third sequence) (first sequence)))))
 ;      (build-rtm (mapcar #'second (second sequence))
@@ -571,3 +576,36 @@ A voice object or a list of rythmic trees and tempos.
                           (third result2)
                           (first result2)
                           begin end)))))))
+
+
+;; METRIC-MODULATION-RATIOS (PHRaposo/2025)
+
+(defun tempo-list (init ratio-list)
+ (let ((res (list init)))
+  (dolist (ratio ratio-list) 
+   (push (* (car res) ratio) res))
+ (nreverse res)))
+
+(defun get-paired-tempos (init ratio-list)
+ (let* ((tempo-list (tempo-list init ratio-list)))
+  (list tempo-list (om::rotate tempo-list))))
+
+(defun tempo-intp-ratios (begin ratio-list)
+ (let ((paired-tempos (get-paired-tempos begin ratio-list)))
+  (om::flat
+   (mapcar #'(lambda (tempo1 tempo2 ratio) 
+              (let ((results (modulate-once tempo1 tempo2 ratio)))
+               (mapcar #'(lambda (res)
+                (make-instance 'om::voice :tree (list 'om::? (list (cdr res))) 
+                                         :tempo (car res)))
+               results)))
+   (first paired-tempos) (butlast (second paired-tempos)) ratio-list))))
+
+(om::defmethod! metric-modulation-ratios ((begin number) (ratio-list list))
+    :initvals '(63 (4/3 5/4 6/5 4/3 3/4 2/3 3/4))
+    :indoc '("begin" "ratio-list")
+    :icon 250
+    :doc "Build a sequence of metric modulations based on a initial tempo and a ratio list. The output is a voice object."
+ (cons-voices (tempo-intp-ratios begin ratio-list)))
+ 
+ 

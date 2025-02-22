@@ -4,6 +4,7 @@
 ;;
 ;;            Gerard Assayag, Claudy Malherbe IRCAM 1996
 ;;            OpenMusic Version March 98
+;;                              Rev. May 2023 - Paulo Raposo
 
 
 (in-package :om)
@@ -112,12 +113,11 @@
      (mapcon #'(lambda (child-list) 
                   (x-append
                    (tree-traversal-2 G (cdr (first child-list)))
-                   (and (member (traverse-tree-m G) '(in full) :test #'eq)
+                  (and (member (traverse-tree-m G) '(in full) :test #'eq)
                         (rest child-list)
                         root)))
               (childs root))
-     
-     (and (member (traverse-tree-m G) '(post full) :test #'eq)
+         (and (member (traverse-tree-m G) '(post full) :test #'eq)
           root))))
                   
 (defmethod traversals ((graph graph) (root node) link &key statmode (root-n 0) (order-p '>=))
@@ -141,7 +141,7 @@
                         if (> weight 0) collect (content next-node)
                         else collect (ameliorate (content next-node) (content node))))))
     (loop for object in traversal
-          for rest on traversal  
+          for rest on traversal  		  
           if (member object rest :test #'eq) collect (clone object)
           else collect object)))
 
@@ -169,13 +169,13 @@
     (loop while queue do
       (setf u (pop-min queue (gweight-order-p a-graph)))
       (push u tree)
-      (dolist (uv (adj-list u))
+      (dolist (uv (adj-list u))      
         (when (and (member (gdestination uv) queue :test #'eq)
                    (funcall (gweight-order-p a-graph)
                             (gweight uv)
                             (key (gdestination uv))))
           (setf (father (gdestination uv)) u)
-          (setf (key (gdestination uv)) (gweight uv)))))
+          (setf (key (gdestination uv)) (gweight uv))))) 
     tree))
 
 
@@ -191,7 +191,7 @@ By default, relations are based on common-notes.
 Inputs :
 
 coll : A chordseq, a list of chords, a list of list of midics.
-pred : (optional) a predicate (e.g. a subpatch in lambda mode) with 2 arguments.
+pred : (optional) a predicate (e.g. a subpatch in lambda mode) with 2 arguments or the output of a 'mk-pred' box.
 
 If pred is given, it defines an alternate relation to examine between chords.
 pred must be ready to compare 2 numbers (e.g. midic) and answer T or Nil.
@@ -207,11 +207,12 @@ A graph object."
   (let ((closure #'=))
     (when pred  (setf closure pred))
     (when (subtypep (type-of coll) 'chord-seq)
-      (setf coll (loop for midics in (LMidic coll)
-                       for vels in (LVel coll)
-                       for durs in (LDur coll)
-                       for chans in (LChan coll)
-                       collect (make-instance 'chord :LMidic midics :LVel vels :LDur durs :Lchan chans))))
+	(setf coll (chords coll))) ;-phraposo 
+      ;(setf coll (loop for midics in (LMidic coll)
+       ;                for vels in (LVel coll)
+        ;               for durs in (LDur coll)
+         ;              for chans in (LChan coll)
+          ;             collect (make-instance 'chord :LMidic midics :LVel vels :LDur durs :Lchan chans))))
     (when (subtypep (type-of (first coll)) 'chord)
       (setf coll (mapcar #'clone coll))
       )
@@ -227,10 +228,10 @@ A graph object."
                         (order integer)
                         (trav integer)              
                         (stat integer))
-  :initvals (list  () 0 1 1 1 1)
+  :initvals '(nil 0 1 1 1 1)
   :indoc '("a Graph" "A number" "A number""A number""A number""A number")
   :icon 250
-  :menuins '( (2 ( ("with link" 1) ("without link" 2) ))
+  :menuins '( (2 ( ("without link" 1) ("with link" 2) )) ;;;corrected (no = 1 - yes = 2)- phraposo
              (3 ( ("maximize" 1) ("minimize" 2) ))
              (4 ( ("short path" 1) ("long path" 2) ))
              (5 ( ("one solution" 1) ("statistics" 2) )) )
@@ -284,7 +285,49 @@ The output is generally connected to the 'chords' input of a 'chordseq' box.
             finally (return traversal))))))
 
 
+(defmethod! mk-pred ((val integer) (tol integer) &rest v)
+    :initvals '(0 0)
+    :indoc '("value" "tolerance")
+    :icon 250
+  (eval
+   `(let ((delta ,tol) (value ,val))
+      (function (lambda (x y) (<= (abs (- value (- y x) )) delta))))))
 
+(defmethod! mk-pred ((val integer) (tol integer) &rest v)
+:initvals '(0 0)
+:indoc '("value" "tolerance")
+:icon 250
+
+:doc "This box is used in conjunction with the 'make-graph' box. It defines a predicate
+used to compare elements in the objects (e.g. chords) put into the graph. Each element x (e.g. note)
+of each object (e.g. chord) is compared to each element y of every other object. Then (y-x) is 
+compared for equality to the parameter <val>, with the tolerance <tol>.
+Thus, for <val> = 0 and <tol> = 0, strict equality (e.g. common notes relation) is seek.
+For <val> = 100, hal-tone upward step relation is seek. If <tol> = 25, then a quarter tone
+tolerance is allowed. If you build a graph using 'make-graph' with these values, then find an optimal path
+using 'graph-tour', what you get is a chord sequence where there is a maximum number of half-tone steps
+between 2 consecutive chords, with a quarter tone tolerance.
+If you add optional arguments (as many as you like), these values will be used to complexify the relation.
+For instance, with <val> = 300, <opt-arg1> = 400, <opt-arg2> = 700,the optimisation 
+will be : 'find a sequence where consecutive chords have the max amount of minor 3rd, major 3rd and
+perfect 5th upward steps.'
+
+
+parameters
+
+val : integer, value to be compared with the difference between notes of chords.
+tol : integer, allowed deviation in the former comparison.
+arg : (optional, integer) additional value to be used like <val>
+
+output
+
+a predicate function object to be connected to the 'pred' input of a 'make-graph' box.
+"
+  (eval
+   `(function (lambda (x y) 
+                (or  
+                 ,. (mapcar #'(lambda (value) `(<= (abs (- ,value (- y x) )) ,tol))
+                            (cons val v)))))))
 
 #|
 (defunp mk-pred ((val integer (:value 0)) (tol fix>=0 (:value 0))) all-types ""
@@ -342,10 +385,19 @@ a predicate function object to be connected to the 'pred' input of a 'make-graph
     (values inter (length inter))))
 
 (defmethod ameliorate ((s1 list) (s2 list))
-  (cons (apply #'min s2) s1) )
+ (cons (apply #'min s2) s1) ) 
 
-(defmethod ameliorate ((s1  chord) (s2  chord)) s1)
-  
+;(defmethod ameliorate ((s1  chord) (s2  chord)) s1)
+
+(defmethod ameliorate ((s1 chord) (s2 chord)) ;subst. previous method - phraposo
+  (make-instance 'chord   
+   :lmidic (ameliorate  (lmidic s1)
+                        (lmidic s2))
+   :ldur  (cons (first (ldur s2))
+                (ldur s2))
+   :lvel  (cons (first (lvel s2))
+                (lvel s2))))
+
 (defun eq-mod-12 (x y) (= (mod x 1200) (mod y 1200)))
 
 (defun mk-joint-step (i-min i-max)
@@ -390,7 +442,3 @@ a predicate function object to be connected to the 'pred' input of a 'make-graph
   :doc "Ties all notes having the same pitch"
   :icon 250
   (tie-same-note (clone self)))
-
-
-
-
